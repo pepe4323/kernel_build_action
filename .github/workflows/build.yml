@@ -13,9 +13,9 @@ jobs:
       contents: write
     steps:
       - name: Build Kernel
-        uses: dabao1955/kernel_build_action@main
+        uses: dabao1955/kernel_build_action@v1.5
         with:
-          kernel-url: https://github.com/pepe4323/9820_kernel# SEM VLOŽ ODKAZ NA SVOJ KERNEL
+          kernel-url: https://github.com/pepe4323/9820_kernel # SEM VLOŽ ODKAZ NA SVOJ KERNEL
           kernel-branch: oneui7  # Názov vetvy pre verziu 2.6.5
           config: beyond0qlte_eur_open_defconfig
           arch: arm64
