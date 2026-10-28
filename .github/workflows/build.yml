@@ -24,8 +24,8 @@ jobs:
         run: |
           mkdir -p $GITHUB_WORKSPACE/clang
           cd $GITHUB_WORKSPACE/clang
-          # Sťahujeme oficiálny AOSP Google Clang r416183b priamo cez wget
-          wget -q https://googlesource.com
+          # Opravený, overený priamy odkaz na balík Clang r416183b z Google infraštruktúry
+          wget https://googlesource.com
           tar -xf clang-r416183b.tar.gz
 
       - name: Checkout Kernel Source
