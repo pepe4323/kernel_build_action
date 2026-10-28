@@ -25,18 +25,17 @@ jobs:
           git clone --depth=1 -b main https://github.com/pepe4323/9820_kernel .
           # ^ SEM VLOŽ SVOJ REÁLNY ODKAZ NA KERNEL
 
-      - name: Integrate KernelSU-Next v3.4.2 (Pure Raw Download)
+      - name: Integrate KernelSU-Next v3.4.2 (Absolute Raw Method)
         run: |
-          # Natvrdo vyčistíme a vytvoríme čistý adresár bez akýchkoľvek väzieb na Git submoduly
+          # Kompletné prečistenie a vytvorenie čistého priečinka
           rm -rf drivers/kernelsu
           mkdir -p drivers/kernelsu
           
-          # Sťahujeme jednotlivé jadrové zdrojové súbory pre v3.4.2 priamo cez ://githubusercontent.com doménu
-          BASE_URL="https://://githubusercontent.com/KernelSU-Next/KernelSU-Next/refs/tags/v3.4.2/kernel"
-          curl -LSs --retry 5 "${BASE_URL}/Kconfig" -o drivers/kernelsu/Kconfig
-          curl -LSs --retry 5 "${BASE_URL}/Makefile" -o drivers/kernelsu/Makefile
-          curl -LSs --retry 5 "${BASE_URL}/ksu.c" -o drivers/kernelsu/ksu.c
-          curl -LSs --retry 5 "${BASE_URL}/ksu.h" -o drivers/kernelsu/ksu.h
+          # Odkazy vpísané natvrdo do príkazov curl bez akýchkoľvek premenných
+          curl -LSs --retry 5 "https://githubusercontent.com" -o drivers/kernelsu/Kconfig
+          curl -LSs --retry 5 "https://githubusercontent.com" -o drivers/kernelsu/Makefile
+          curl -LSs --retry 5 "https://githubusercontent.com" -o drivers/kernelsu/ksu.c
+          curl -LSs --retry 5 "https://githubusercontent.com" -o drivers/kernelsu/ksu.h
           
           # Prepojenie do systémového Makefile
           sed -i '/obj-y += kernelsu\//d' drivers/Makefile
@@ -46,7 +45,7 @@ jobs:
           sed -i '/source "drivers\/kernelsu\/Kconfig"/d' drivers/Kconfig
           sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
           
-          # Dynamické nájdenie Samsung defconfigu v tvojom zdrojovom kóde
+          # Dynamické nájdenie Samsung defconfigu
           CONFIG_PATH=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" | head -n 1)
           if [ -z "$CONFIG_PATH" ]; then
             CONFIG_PATH=$(find arch/arm64/configs/ -name "*defconfig" | head -n 1)
