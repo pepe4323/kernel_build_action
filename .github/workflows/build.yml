@@ -27,26 +27,25 @@ jobs:
 
       - name: Integrate KernelSU-Next v3.4.2 (Zero-Git Method)
         run: |
-          # Natvrdo odstránime zložku, ak by existovala
           rm -rf drivers/kernelsu
           mkdir -p drivers/kernelsu
           
-          # Sťahujeme zdrojový kód verzie v3.4.2 ako čistý archív zip, čím obchádzame akékoľvek Git submoduly a chyby
-          curl -LO https://github.com
+          # Sťahujeme archív a parametrom -o vynútime presný názov cieľového súboru ksu.zip
+          curl -L "https://github.com" -o ksu.zip
           
-          # Rozbalíme ho do dočasného priečinka a presunieme čisté súbory na miesto
-          unzip -q v3.4.2.zip
+          # Rozbalíme presne pomenovaný súbor a bezpečne upraceme
+          unzip -q ksu.zip
           cp -r KernelSU-Next-3.4.2/kernel/* drivers/kernelsu/
-          rm -rf v3.4.2.zip KernelSU-Next-3.4.2
+          rm -rf ksu.zip KernelSU-Next-3.4.2
           
-          # Prečistíme a bezpečne zapíšeme prepojenia do Makefile a Kconfig súborov
+          # Prečistíme a zapíšeme prepojenia do Makefile a Kconfig
           sed -i '/obj-y += kernelsu\//d' drivers/Makefile
           echo "obj-y += kernelsu/" >> drivers/Makefile
           
           sed -i '/source "drivers\/kernelsu\/Kconfig"/d' drivers/Kconfig
           sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
           
-          # Úprava tvojho defconfigu na vynútenie spustenia KSU-Next
+          # Úprava tvojho defconfigu pre vynútenie KSU-Next prepínačov
           sed -i '/CONFIG_KSU/d' arch/arm64/configs/beyond0qlte_eur_open_defconfig
           sed -i '/CONFIG_MODULE_SIG/d' arch/arm64/configs/beyond0qlte_eur_open_defconfig
           echo "CONFIG_KSU=y" >> arch/arm64/configs/beyond0qlte_eur_open_defconfig
