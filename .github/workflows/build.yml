@@ -18,7 +18,6 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          # Zanechali sme len čisté, moderné 64-bitové nástroje, ktoré Ubuntu stiahne bez konfliktov
           sudo apt-get install -y bc bison build-essential ccache flex git gnupg gperf libncurses5-dev libssl-dev libxml2-dev libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 libssl-dev curl wget llvm clang gcc-aarch64-linux-gnu lz4
 
       - name: Checkout Kernel Source
@@ -26,9 +25,18 @@ jobs:
           git clone --depth=1 -b main https://github.com/pepe4323/9820_kernel .
           # ^ SEM VLOŽ SVOJ REÁLNY ODKAZ NA KERNEL
 
-      - name: Integrate KernelSU-Next v3.4.2
+      - name: Integrate KernelSU-Next v3.4.2 (Manual Method)
         run: |
-          curl -LSs "https://githubusercontent.com" | bash -s v3.4.2
+          # Manuálne naklonujeme presnú verziu KernelSU-Next v3.4.2 priamo do priečinka drivers/kernelsu
+          git clone https://github.com drivers/kernelsu -b v3.4.2
+          
+          # Natvrdo zapíšeme prepojenia do Makefile a Kconfig súborov kernelu
+          echo "obj-y += kernelsu/" >> drivers/Makefile
+          
+          # Hľadáme koniec súboru drivers/Kconfig a vložíme pred záverečné "endmenu" prepojenie na KSU
+          sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
+          
+          # Zapíšeme potrebné konfigurácie priamo do tvojho defconfigu
           echo "CONFIG_KSU=y" >> arch/arm64/configs/beyond0qlte_eur_open_defconfig
           echo "CONFIG_KSU_NEXT=y" >> arch/arm64/configs/beyond0qlte_eur_open_defconfig
           echo "CONFIG_MODULE_SIG=n" >> arch/arm64/configs/beyond0qlte_eur_open_defconfig
