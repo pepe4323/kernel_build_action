@@ -24,8 +24,9 @@ jobs:
         run: |
           mkdir -p $GITHUB_WORKSPACE/clang
           cd $GITHUB_WORKSPACE/clang
-          wget https://googlesource.com
-          tar -xf clang-r416183b.tar.gz
+          # Sťahujeme stabilnú verziu Clang r416183b z overeného GitHub zrkadla
+          curl -LO https://github.com
+          tar -xf Clang-12.0.5-20210515-r416183b.tar.gz
 
       - name: Checkout Kernel Source
         run: |
