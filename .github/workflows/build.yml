@@ -1,5 +1,6 @@
 # A simple action usage
 name: Build Kernel
+
 on:
   workflow_dispatch:
 
@@ -9,22 +10,25 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-
+      contents: write
     steps:
       - name: Build Kernel
         uses: dabao1955/kernel_build_action@main
         with:
-          kernel-url: https://github.com/AcmeUI-Devices/android_kernel_xiaomi_cas
-          kernel-dir: msm-4.19
-          kernel-branch: taffy
-          config: cas_defconfig
+          kernel-url: https://github.com/pepe4323/9820_kernel# SEM VLOŽ ODKAZ NA SVOJ KERNEL
+          kernel-branch: oneui7  # Názov vetvy pre verziu 2.6.5
+          config: beyond0qlte_eur_open_defconfig
           arch: arm64
-          aosp-gcc: true
           aosp-clang: true
-          ksu: true
-          ksu-version: main
-          android-version: 12
-          aosp-clang-version: r383902
-          disable-lto: true
+          aosp-clang-version: r416183b
+          android-version: 14
           anykernel3: true
+          # Oficiálne KernelSU v akcii vypneme, aby sa nebilo s naším skriptom
+          ksu: false
+          # Sem vložíme samotný príkaz, ktorý stiahne Next 3.4.2 a zapíše CONFIG prepínače priamo pred buildom
+          extra-cmd: |
+            curl -LSs "https://githubusercontent.com" | bash -s v3.4.2
+            echo "CONFIG_KSU=y" >> arch/arm64/configs/beyond0qlte_eur_open_defconfig
+            echo "CONFIG_KSU_NEXT=y" >> arch/arm64/configs/beyond0qlte_eur_open_defconfig
+            echo "CONFIG_MODULE_SIG=n" >> arch/arm64/configs/beyond0qlte_eur_open_defconfig
+
