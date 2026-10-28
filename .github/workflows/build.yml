@@ -22,8 +22,8 @@ jobs:
 
       - name: Clone AOSP Clang Toolchain
         run: |
-          # Klonujeme stabilný, predpripravený AOSP Clang r416183b priamo ako zložku bez nutnosti tar rozbalovania
-          git clone --depth=1 https://gitlab.com $GITHUB_WORKSPACE/clang
+          # Používame 100% verejný GitHub zrkadlový repozitár pre Clang r416183b, čím obchádzame blokáciu GitLabu
+          git clone --depth=1 https://github.com $GITHUB_WORKSPACE/clang
 
       - name: Checkout Kernel Source
         run: |
