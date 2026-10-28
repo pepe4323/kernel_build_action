@@ -18,8 +18,8 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          # Pridali sme balík binutils-aarch64-linux-gnu pre natívnu podporu všetkých ARM64 linkerov
-          sudo apt-get install -y bc bison build-essential ccache flex git gnupg gperf libncurses5-dev libssl-dev libxml2-dev libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 libssl-dev curl wget llvm clang gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu lz4 unzip
+          # Pridaný balík lld, ktorý dodá chýbajúci príkaz ld.lld pre spájanie VDSO vrstvy
+          sudo apt-get install -y bc bison build-essential ccache flex git gnupg gperf libncurses5-dev libssl-dev libxml2-dev libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 libssl-dev curl wget llvm clang lld gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu lz4 unzip
 
       - name: Checkout Kernel Source
         run: |
@@ -108,12 +108,9 @@ jobs:
           fi
           echo "Spúšťam konfiguráciu pre: $CONFIG_NAME"
           
-          # VYMAZANIE NÚTENÉHO GOLD LINKERA: Povieme Makefile, aby prepísal požiadavku na nedostupný ld.gold za klasický ld
           sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso/Makefile || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
-          
-          # Pridané parametre LD=ld.lld a OBJCOPY/STRIP pre vynútenie stabilného LLVM spájania súborov
           make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu-
 
       - name: Package with AnyKernel3
