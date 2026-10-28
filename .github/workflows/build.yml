@@ -20,12 +20,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc bison build-essential ccache flex g++-multilib gcc-multilib git gnupg gperf lib32readline-dev lib32z1-dev lz4 libncurses5-dev libsdl1.2-dev libssl-dev libxml2-dev libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 libssl-dev curl wget
 
-      - name: Download and Unpack AOSP Clang
+      - name: Clone AOSP Clang Toolchain
         run: |
-          mkdir -p $GITHUB_WORKSPACE/clang
-          cd $GITHUB_WORKSPACE/clang
-          wget -q https://googlesource.com
-          tar -xf clang-r416183b.tar.gz
+          # Klonujeme stabilný, predpripravený AOSP Clang r416183b priamo ako zložku bez nutnosti tar rozbalovania
+          git clone --depth=1 https://gitlab.com $GITHUB_WORKSPACE/clang
 
       - name: Checkout Kernel Source
         run: |
