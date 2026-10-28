@@ -20,16 +20,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc bison build-essential ccache flex g++-multilib gcc-multilib git gnupg gperf lib32readline-dev lib32z1-dev lz4 libncurses5-dev libsdl1.2-dev libssl-dev libxml2-dev libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 libssl-dev curl wget
 
-      - name: Set up Clang Toolchain
-        uses: KyleKun/setup-clang-llvm@main
-        with:
-          # Použijeme stabilný Android NDK Clang r416183b (Clang v12) bez preťaženia Google serverov
-          download-url: https://githubusercontent.com
+      - name: Download and Unpack AOSP Clang
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/clang
+          cd $GITHUB_WORKSPACE/clang
+          # Sťahujeme overený zrkadlový archív r416183b, ktorý nepodlieha limitom Google Source
+          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master-kernel-build-2021/clang-r416183b.tar.gz
+          tar -xf clang-r416183b.tar.gz
 
       - name: Checkout Kernel Source
         run: |
           git clone --depth=1 -b oneui7 https://github.com/pepe4323/9820_kernel
-          # ^ SEM VLOŽ SVOJ ODKAZ NA KERNEL (REPLÁCNI ODKAZ VYŠŠIE)
+          # ^ SEM VLOŽ SVOJ REÁLNY ODKAZ NA KERNEL
 
       - name: Integrate KernelSU-Next v3.4.2
         run: |
@@ -42,6 +44,7 @@ jobs:
       - name: Build Kernel Core
         run: |
           cd kernel_src
+          export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=aarch64-linux-android-
@@ -52,7 +55,7 @@ jobs:
       - name: Package with AnyKernel3
         run: |
           git clone --depth=1 https://github.com AnyKernel3
-          cp kernel_src/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
+          cp kernel_src/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/ || cp kernel_src/out/arch/arm64/boot/Image AnyKernel3/
           cd AnyKernel3
           zip -r9 ../CreckerKernel-KSU-Next.zip *
 
