@@ -24,13 +24,12 @@ jobs:
         run: |
           mkdir -p $GITHUB_WORKSPACE/clang
           cd $GITHUB_WORKSPACE/clang
-          # Sťahujeme overený zrkadlový archív r416183b, ktorý nepodlieha limitom Google Source
-          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master-kernel-build-2021/clang-r416183b.tar.gz
+          wget -q https://googlesource.com
           tar -xf clang-r416183b.tar.gz
 
       - name: Checkout Kernel Source
         run: |
-          git clone --depth=1 -b oneui7 https://github.com/pepe4323/9820_kernel
+          git clone --depth=1 -b main https://github.com/pepe4323/9820_kernel
           # ^ SEM VLOŽ SVOJ REÁLNY ODKAZ NA KERNEL
 
       - name: Integrate KernelSU-Next v3.4.2
