@@ -25,27 +25,35 @@ jobs:
           git clone --depth=1 -b main https://github.com/pepe4323/9820_kernel .
           # ^ SEM VLOŽ SVOJ REÁLNY ODKAZ NA KERNEL
 
-      - name: Integrate KernelSU-Next v3.4.2 (Native Patch Method)
+      - name: Integrate KernelSU-Next v3.4.2 (Bulletproof Git Method)
         run: |
+          # Natvrdo vyčistíme staré priečinky
           rm -rf drivers/kernelsu
-          mkdir -p drivers/kernelsu
           
-          # Pridaný parameter --retry pre prípad zakolísania siete na GitHub serveroch
-          curl -LSs --retry 5 "https://githubusercontent.com" | bash -s v3.4.2
+          # Stiahneme presnú stabilnú verziu v3.4.2 z novej oficiálnej organizácie priamo na správne miesto
+          git clone -b v3.4.2 --depth=1 https://github.com drivers/kernelsu
           
+          # Presunieme samotné jadro ovládača do koreňa zložky, presne tak, ako to vyžaduje kconfig
+          cd drivers/kernelsu
+          cp -r kernel/* .
+          cd ../..
+          
+          # Ošetríme duplicity a prepojíme Makefile
           sed -i '/obj-y += kernelsu\//d' drivers/Makefile
           echo "obj-y += kernelsu/" >> drivers/Makefile
           
+          # Ošetríme duplicity a prepojíme Kconfig pred záverečný endmenu tag
           sed -i '/source "drivers\/kernelsu\/Kconfig"/d' drivers/Kconfig
           sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
           
-          # AUTOMATICKÉ VYHĽADANIE DEFCONFIGU: Skript sám nájde, kde presne v arch/arm64/configs tvoj súbor leží
+          # Dynamicky vyhľadáme tvoj defconfig súbor v Samsung štruktúre
           CONFIG_PATH=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" | head -n 1)
           if [ -z "$CONFIG_PATH" ]; then
             CONFIG_PATH=$(find arch/arm64/configs/ -name "*defconfig" | head -n 1)
           fi
-          echo "Nájdená cesta k defconfigu: $CONFIG_PATH"
+          echo "Konfigurujem defconfig na ceste: $CONFIG_PATH"
           
+          # Vynútime zápis potrebných flagov pre Android 15 / OneUI 7 root
           sed -i '/CONFIG_KSU/d' "$CONFIG_PATH"
           sed -i '/CONFIG_MODULE_SIG/d' "$CONFIG_PATH"
           echo "CONFIG_KSU=y" >> "$CONFIG_PATH"
@@ -58,9 +66,9 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # Vyhľadáme relatívny názov pre príkaz make (napr. exynos/beyond0qlte_eur_open_defconfig)
+          # Zistíme relatívny názov konfigurácie pre Samsung (napr. exynos/beyond0qlte_eur_open_defconfig)
           CONFIG_NAME=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" | sed 's|arch/arm64/configs/||' | head -n 1)
-          echo "Spúšťam konfiguráciu pre: $CONFIG_NAME"
+          echo "Aktivujem konfiguráciu: $CONFIG_NAME"
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
           make -j$(nproc --all) O=out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu-
