@@ -27,34 +27,42 @@ jobs:
 
       - name: Integrate KernelSU-Next v3.4.2 (Native Patch Method)
         run: |
-          # Vyčistíme a vytvoríme čistú cieľovú zložku pre ovládač
           rm -rf drivers/kernelsu
           mkdir -p drivers/kernelsu
           
-          # Stiahneme kompletnú implementáciu priamo cez oficiálny inštalačný manažér organizácie
-          curl -LSs "https://githubusercontent.com" | bash -s v3.4.2
+          # Pridaný parameter --retry pre prípad zakolísania siete na GitHub serveroch
+          curl -LSs --retry 5 "https://githubusercontent.com" | bash -s v3.4.2
           
-          # Prečistíme staré prepojenia v Makefile, aby sme predišli chybám kompilácie
           sed -i '/obj-y += kernelsu\//d' drivers/Makefile
           echo "obj-y += kernelsu/" >> drivers/Makefile
           
-          # Bezpečne integrujeme Kconfig menu pred záverečný endmenu tag
           sed -i '/source "drivers\/kernelsu\/Kconfig"/d' drivers/Kconfig
           sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
           
-          # Vyčistíme staré a natvrdo vynútime CONFIG prepínače na konci tvojho defconfigu
-          sed -i '/CONFIG_KSU/d' arch/arm64/configs/beyond0qlte_eur_open_defconfig
-          sed -i '/CONFIG_MODULE_SIG/d' arch/arm64/configs/beyond0qlte_eur_open_defconfig
-          echo "CONFIG_KSU=y" >> arch/arm64/configs/beyond0qlte_eur_open_defconfig
-          echo "CONFIG_KSU_NEXT=y" >> arch/arm64/configs/beyond0qlte_eur_open_defconfig
-          echo "CONFIG_MODULE_SIG=n" >> arch/arm64/configs/beyond0qlte_eur_open_defconfig
+          # AUTOMATICKÉ VYHĽADANIE DEFCONFIGU: Skript sám nájde, kde presne v arch/arm64/configs tvoj súbor leží
+          CONFIG_PATH=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" | head -n 1)
+          if [ -z "$CONFIG_PATH" ]; then
+            CONFIG_PATH=$(find arch/arm64/configs/ -name "*defconfig" | head -n 1)
+          fi
+          echo "Nájdená cesta k defconfigu: $CONFIG_PATH"
+          
+          sed -i '/CONFIG_KSU/d' "$CONFIG_PATH"
+          sed -i '/CONFIG_MODULE_SIG/d' "$CONFIG_PATH"
+          echo "CONFIG_KSU=y" >> "$CONFIG_PATH"
+          echo "CONFIG_KSU_NEXT=y" >> "$CONFIG_PATH"
+          echo "CONFIG_MODULE_SIG=n" >> "$CONFIG_PATH"
 
       - name: Build Kernel Core
         run: |
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
-          make O=out ARCH=arm64 beyond0qlte_eur_open_defconfig
+          
+          # Vyhľadáme relatívny názov pre príkaz make (napr. exynos/beyond0qlte_eur_open_defconfig)
+          CONFIG_NAME=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" | sed 's|arch/arm64/configs/||' | head -n 1)
+          echo "Spúšťam konfiguráciu pre: $CONFIG_NAME"
+          
+          make O=out ARCH=arm64 "$CONFIG_NAME"
           make -j$(nproc --all) O=out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu-
 
       - name: Package with AnyKernel3
