@@ -83,7 +83,6 @@ jobs:
           sed -i '/source "drivers\/kernelsu\/Kconfig"/d' drivers/Kconfig
           sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
           
-          # VYHĽADÁVANIE S POISTKAMI: Ak nenájde presný názov, zoberie akýkoľvek defconfig pre začiatočné písmená beyond0q alebo exynos9820
           CONFIG_PATH=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" -o -name "beyond0q*" -o -name "*9820*" | head -n 1)
           if [ -z "$CONFIG_PATH" ]; then
             CONFIG_PATH=$(find arch/arm64/configs/ -name "*defconfig" | head -n 1)
@@ -102,7 +101,6 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           
-          # Upravené dynamické hľadanie pre relatívnu cestu k súboru
           CONFIG_NAME=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" -o -name "beyond0q*" -o -name "*9820*" | sed 's|arch/arm64/configs/||' | head -n 1)
           if [ -z "$CONFIG_NAME" ]; then
             CONFIG_NAME=$(find arch/arm64/configs/ -name "*defconfig" | sed 's|arch/arm64/configs/||' | head -n 1)
@@ -120,7 +118,7 @@ jobs:
           zip -r9 ../CreckerKernel-KSU-Next.zip *
 
       - name: Upload Finished Kernel Artifact
-        uses: actions/write-artifact@v4 || uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: CreckerKernel-KSU-Next-S10e
           path: CreckerKernel-KSU-Next.zip
