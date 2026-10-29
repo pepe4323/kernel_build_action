@@ -135,18 +135,13 @@ jobs:
           sed -i '1i #include <linux/plist.h>' drivers/cpuidle/exynos-ucc.c || true
           sed -i '1i #include <linux/sched.h>' drivers/samsung/debug/sec_debug_dtask.c || true
           
-          # NATVRDO PREPÍŠEME CELÝ VISION MAKEFILE: 32-bitové súbory dostanú prísny zákaz štartu (CONFIG_COMPAT)
-          cat << 'EOF' > drivers/vision/vision-core/Makefile
-          obj-y += vision-core.o
-          vision-core-objs := vision-main.o vision-ioctl.o vision-gasket.o
-          obj-$(CONFIG_COMPAT) += vision-compat-ioctl32.o vision-compat-ioctl32_v1.o
-          ccflags-y += -Idrivers/vision -Idrivers/vision/vision-core
-          EOF
-          
+          # BEZPEČNÁ ÚPRAVA ORIGINÁLNYCH SÚBOROV MAKEFILE: Iba podmienime chybové riadky bez toho, aby sme čokoľvek vymazali
+          sed -i 's/vision-compat-ioctl32.o/obj-$(CONFIG_COMPAT) += vision-compat-ioctl32.o/g' drivers/vision/vision-core/Makefile || true
+          sed -i 's/vision-compat-ioctl32_v1.o/obj-$(CONFIG_COMPAT) += vision-compat-ioctl32_v1.o/g' drivers/vision/vision-core/Makefile || true
           sed -i 's/obj-y += vpu_compat_ioctl32.o/obj-$(CONFIG_COMPAT) += vpu_compat_ioctl32.o/g' drivers/vision/vpu/Makefile || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_compat_ioctl"
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_ioctl"
 
       - name: Package with AnyKernel3
         run: |
