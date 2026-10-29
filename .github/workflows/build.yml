@@ -133,8 +133,8 @@ jobs:
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
           
-          # NEPRIESTRELNÉ KCFLAGS: Pridané hromadné makro pre audio premostenie a globálne vynútenie plist.h pre zložku cpuidle cez -include
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_ioctl -include linux/plist.h"
+          # NEPRIESTRELNÉ KCFLAGS: Pridané globálne vynútenie hlavičky plánovača úloh (-include linux/sched.h) priamo do pamäte kompilátora
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_ioctl -include linux/plist.h -include linux/sched.h"
 
       - name: Package with AnyKernel3
         run: |
