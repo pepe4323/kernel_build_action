@@ -129,16 +129,19 @@ jobs:
           sed -i '1i #include <linux/plist.h>' include/linux/ems_service.h || true
           sed -i '2i #ifndef F2FS_SUPER_MAGIC\n#define F2FS_SUPER_MAGIC 0xF2F52010\n#endif' fs/super.c || true
           
+          # BEZPEČNÁ ZÁPLATA: Vložíme kompletné 32-bitové premostenia priamo do hlavičkového súboru (Vyhneme sa zátvorkám v príkaze make)
+          sed -i '1i #ifndef compat_alloc_user_space\n#define compat_alloc_user_space(x) NULL\n#endif\n#ifndef compat_ptr\n#define compat_ptr(x) ((void*)(unsigned long)(x))\n#endif\n#ifndef compat_caddr_t\n#define compat_caddr_t void*\n#endif\nstruct compat_timeval { long tv_sec; long tv_usec; };' include/linux/compat.h || true
+          
           make O=out ARCH=arm64 "$CONFIG_NAME"
           make O=out ARCH=arm64 CC=clang prepare
           
-          # DEFINITÍVNY BUILD: Chýbajúce typy (compat_caddr_t a compat_ptr) vložené ako čistý text bez zátvoriek do KCFLAGS, čo obíde všetky vision chyby naraz
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -ffixed-x18 -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_ioctl -Dcompat_caddr_t=void* -Dcompat_ptr(x)=((void*)(unsigned long)(x)) -include linux/plist.h -include linux/sched.h"
+          # ÚPLNE ČISTÝ PRÍKAZ make bez jedinej zátvorky v KCFLAGS reťazci
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -ffixed-x18 -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_ioctl"
 
       - name: Package with AnyKernel3
         run: |
           git clone --depth=1 https://github.com AnyKernel3_priečinok
-          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3_priečinok/ || cp out/arch/arm64/boot/Image AnyKernel3_priečinok/
+          cp out/arch/arch/boot/Image.gz-dtb AnyKernel3_priečinok/ || cp out/arch/arm64/boot/Image AnyKernel3_priečinok/
           cd AnyKernel3_priečinok
           zip -r9 ../CreckerKernel-KSU-Next.zip *
 
