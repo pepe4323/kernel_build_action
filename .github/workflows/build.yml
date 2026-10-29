@@ -126,21 +126,18 @@ jobs:
           
           sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso/Makefile || true
           
-          # VYMAZANÉ STARÉ POKUSY s compiler.h a compat.h, ktoré spôsobovali slučky
-          
-          # CIELENÉ ZÁPLATY PRE KONKRÉTNE SÚBORY: Vložíme typy len tam, kde reálne chýbajú a vyvolávali pády
           sed -i '1i #include <linux/plist.h>' include/linux/ems_service.h || true
           sed -i '1i #include <linux/plist.h>' include/linux/exynos-ucc.h || true
           sed -i '1i #include <linux/plist.h>' drivers/cpuidle/exynos-ucc.c || true
           sed -i '1i #include <linux/sched.h>' drivers/samsung/debug/sec_debug_dtask.c || true
           sed -i '2i #ifndef F2FS_SUPER_MAGIC\n#define F2FS_SUPER_MAGIC 0xF2F52010\n#endif' fs/super.c || true
           
-          # Cielená typová injekcia pre zram a vision ovládače priamo do ich C textov
           sed -i '1i #define compat_alloc_user_space(x) NULL' drivers/block/zram/zram_drv.c || true
-          find . -type f -name "vision-compat-ioctl32*.c" -exec sed -i '1i #define compat_caddr_t void*\n#define compat_ptr(x) ((void*)(unsigned long)(x))\nstruct compat_timeval { long tv_sec; long tv_usec; };' {} + || true
-          find . -type f -name "vpu_compat_ioctl32.c" -exec sed -i '1i #define compat_caddr_t void*\n#define compat_ptr(x) ((void*)(unsigned long)(x))' {} + || true
           
-          # Hromadná oprava audia
+          # DEFINITÍVNY TYPOVÝ OPRAVNÝ RIADOK: Zmenené void* na riadny číselný unsigned int pre bezchybné get_user priradenie
+          find . -type f -name "vision-compat-ioctl32*.c" -exec sed -i '1i #define compat_caddr_t unsigned int\n#define compat_ptr(x) ((void*)(unsigned long)(x))\nstruct compat_timeval { long tv_sec; long tv_usec; };' {} + || true
+          find . -type f -name "vpu_compat_ioctl32.c" -exec sed -i '1i #define compat_caddr_t unsigned int\n#define compat_ptr(x) ((void*)(unsigned long)(x))' {} + || true
+          
           find . -type f -name "abox_*.c" -o -name "abox_*.h" -exec sed -i 's/abox_rdma_fio_compat_ioctl/abox_rdma_fio_ioctl/g' {} + || true
           find . -type f -name "abox_*.c" -o -name "abox_*.h" -exec sed -i 's/abox_wdma_fio_compat_ioctl/abox_wdma_fio_ioctl/g' {} + || true
           find . -type f -name "abox_*.c" -o -name "abox_*.h" -exec sed -i 's/abox_g_rdma_fio_compat_ioctl/abox_g_rdma_fio_ioctl/g' {} + || true
@@ -150,7 +147,6 @@ jobs:
           make O=out ARCH=arm64 "$CONFIG_NAME"
           make O=out ARCH=arm64 CC=clang prepare
           
-          # ABSOLÚTNE ČISTÝ PRÍKAZ MAKE: Len základné parametre, žiadne rizikové zátvorky ani prepínače -include
           make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -ffixed-x18 -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010"
 
       - name: Package with AnyKernel3
