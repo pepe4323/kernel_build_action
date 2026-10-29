@@ -173,7 +173,7 @@ jobs:
           
           # 3. Vojde do priečinka a zabalí to do finálneho .zip
           cd anykernel
-          zip -r9 ../CreckerKernel-KSU-Next.zip *
+          zip -r9 ../CreckerKernel-KSU-Next.zip * 
 
       - name: Upload Finished Kernel Artifact
         uses: actions/upload-artifact@v4
