@@ -130,16 +130,14 @@ jobs:
           sed -i 's/abox_g_wdma_fio_compat_ioctl/abox_g_wdma_fio_ioctl/g' sound/soc/samsung/abox/abox_g_wdma.c || true
           sed -i 's/\.ioctl_compat.*/.ioctl_compat = abox_pcm_ioctl,/g' sound/soc/samsung/abox/abox_pcm.c || true
           
-          sed -i 's/buf = compat_alloc_user_space/#ifdef CONFIG_COMPAT\n\tbuf = compat_alloc_user_space/g' drivers/block/zram/zram_drv.c || true
-          sed -i 's/return zram_compat_ioctl(bdev, mode, cmd, arg);/return zram_compat_ioctl(bdev, mode, cmd, arg);\n#else\n\treturn -ENOTTY;\n#endif/g' drivers/block/zram/zram_drv.c || true
-          
-          # HROMADNÉ PREDOŠTRENIE OVLÁDAČOV DRIVERS PRED 32-BITOVÝMI PÁDMI
           sed -i 's/\.compat_ioctl.*/#ifdef CONFIG_COMPAT\n\t.compat_ioctl = gsc_v4l2_compat_ioctl,\n#endif/g' drivers/media/platform/exynos/gsc/gsc-core.c || true
           sed -i 's/vpu_compat_ioctl/#ifdef CONFIG_COMPAT\n\tvpu_compat_ioctl\n#else\n\tNULL\n#endif/g' drivers/vision/vpu/vpu_ioctl.c || true
           sed -i 's/\.compat_ioctl.*/#ifdef CONFIG_COMPAT\n\t.compat_ioctl = kbase_api_compat_ioctl,\n#endif/g' drivers/gpu/arm/midgard/mali_kbase_core_linux.c || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010"
+          
+          # VYČISTENÝ PRÍKAZ: Pridaná globálna definícia pre chýbajúcu zram funkciu (-Dcompat_alloc_user_space(x)=NULL)
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dcompat_alloc_user_space(x)=NULL"
 
       - name: Package with AnyKernel3
         run: |
