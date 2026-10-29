@@ -94,7 +94,6 @@ jobs:
           echo "CONFIG_COMPAT=n" >> "$CONFIG_PATH"
           echo "CONFIG_VDSO32=n" >> "$CONFIG_PATH"
           
-          # NATVRDO DEAKTIVUJEME LTO OPTIMALIZÁCIU, ABY SME ZLIKVIDOVALI CHYBY BFD PLUGINU
           sed -i '/CONFIG_LTO/d' "$CONFIG_PATH"
           sed -i '/CONFIG_LTO_CLANG/d' "$CONFIG_PATH"
           echo "CONFIG_LTO=n" >> "$CONFIG_PATH"
@@ -121,8 +120,8 @@ jobs:
           
           sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso/Makefile || true
           
-          # BEZPEČNEJŠIE VLOŽENIE HLAVIČKY: Presúvame vloženie plist.h na riadok 10
-          sed -i '10i #include <linux/plist.h>' include/linux/ems_service.h || true
+          # ZMENA: Vkladáme hlavičku priamo na 1. riadok súboru, čím zaručíme jej načítanie ako prvej veci
+          sed -i '1i #include <linux/plist.h>' include/linux/ems_service.h || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
           make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi-
