@@ -125,16 +125,17 @@ jobs:
           echo "Spúšťam konfiguráciu pre: $CONFIG_NAME"
           
           sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso/Makefile || true
-          
-          # Vyčistené riadky sed bez chýb syntaxe
+          sed -i 's/1i #include <linux\/plist.h>/d' include/linux/ems_service.h || true
           sed -i '1i #include <linux/plist.h>' include/linux/ems_service.h || true
           sed -i '2i #ifndef F2FS_SUPER_MAGIC\n#define F2FS_SUPER_MAGIC 0xF2F52010\n#endif' fs/super.c || true
           sed -i '1i #ifndef compat_alloc_user_space\n#define compat_alloc_user_space(x) NULL\n#endif\n#ifndef compat_ptr\n#define compat_ptr(x) ((void*)(unsigned long)(x))\n#endif' include/linux/compat.h || true
           
+          # 1. ČISTÁ PRÍPRAVNÁ FÁZA: Vytvorí konfiguráciu a timeconst.h úplne bez rizikových flagov
           make O=out ARCH=arm64 "$CONFIG_NAME"
+          make O=out ARCH=arm64 CC=clang prepare
           
-          # BEZPEČNÉ ODLADENIE: Presunuli sme záchranné makrá priamo do premennej KBUILD_CFLAGS vo vnútri príkazu make, aby neblokovali fázu prepare
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KBUILD_CFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_ioctl -include linux/plist.h -include linux/sched.h"
+          # 2. OSTRÁ KOMPILÁCIA HARDVÉRU: Spustí sa až na vygenerovaných základoch s pridaným architektonickým prepínačom -ffixed-x18 pre Clang
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -ffixed-x18 -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_ioctl -include linux/plist.h -include linux/sched.h"
 
       - name: Package with AnyKernel3
         run: |
