@@ -83,20 +83,17 @@ jobs:
           sed -i '/source "drivers\/kernelsu\/Kconfig"/d' drivers/Kconfig
           sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
           
-          # Dynamické nájdenie Samsung defconfigu
           CONFIG_PATH=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" -o -name "beyond0q*" -o -name "*9820*" | head -n 1)
           if [ -z "$CONFIG_PATH" ]; then
             CONFIG_PATH=$(find arch/arm64/configs/ -name "*defconfig" | head -n 1)
           fi
           echo "Konfigurujem defconfig na ceste: $CONFIG_PATH"
           
-          # NATVRDO VYPNEME 32-BITOVÚ KOMPATIBILITU A PROBLEMOVÉ VDSO32
           sed -i '/CONFIG_COMPAT/d' "$CONFIG_PATH"
           sed -i '/CONFIG_VDSO32/d' "$CONFIG_PATH"
           echo "CONFIG_COMPAT=n" >> "$CONFIG_PATH"
           echo "CONFIG_VDSO32=n" >> "$CONFIG_PATH"
           
-          # Vynútenie flagov pre KernelSU-Next
           sed -i '/CONFIG_KSU/d' "$CONFIG_PATH"
           sed -i '/CONFIG_MODULE_SIG/d' "$CONFIG_PATH"
           echo "CONFIG_KSU=y" >> "$CONFIG_PATH"
@@ -117,6 +114,9 @@ jobs:
           echo "Spúšťam konfiguráciu pre: $CONFIG_NAME"
           
           sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso/Makefile || true
+          
+          # ZÁPLATA PRE EMS SERVIS: Vložíme chýbajúcu knižnicu hneď na druhý riadok súboru
+          sed -i '2i #include <linux/plist.h>' include/linux/ems_service.h || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
           make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi-
