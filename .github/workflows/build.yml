@@ -133,9 +133,12 @@ jobs:
           
           sed -i '1i #include <linux/plist.h>' include/linux/exynos-ucc.h || true
           sed -i '1i #include <linux/plist.h>' drivers/cpuidle/exynos-ucc.c || true
-          
-          # ZÁPLATA PRE SAMSUNG DEBUG: Injektujeme základnú knižnicu plánovača na prvý riadok chybového súboru
           sed -i '1i #include <linux/sched.h>' drivers/samsung/debug/sec_debug_dtask.c || true
+          
+          # HROMADNÁ PREVENTÍVNA ZÁPLATA PRE CELÝ PODSYSTÉM SAMSUNG VISION (Vypnutie zostávajúcich 32-bit súborov)
+          sed -i 's/obj-y += vision-compat-ioctl32.o/obj-$(CONFIG_COMPAT) += vision-compat-ioctl32.o/g' drivers/vision/vision-core/Makefile || true
+          sed -i 's/obj-y += vision-compat-ioctl32_v1.o/obj-$(CONFIG_COMPAT) += vision-compat-ioctl32_v1.o/g' drivers/vision/vision-core/Makefile || true
+          sed -i 's/obj-y += vpu_compat_ioctl32.o/obj-$(CONFIG_COMPAT) += vpu_compat_ioctl32.o/g' drivers/vision/vpu/Makefile || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
           make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_ioctl"
