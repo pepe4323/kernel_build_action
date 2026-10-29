@@ -149,15 +149,13 @@ jobs:
           
           sed -i '1i #ifndef compat_alloc_user_space\n#define compat_alloc_user_space(x) NULL\n#endif\n#ifndef compat_ptr\n#define compat_ptr(x) ((void*)(unsigned long)(x))\n#endif\n#ifndef compat_caddr_t\n#define compat_caddr_t unsigned int\n#endif' include/linux/compat.h || true
           
-          # VYHĽADANIE A STOPROCENTNÁ OPRAVA PRE OVLÁDAČ ENERGIE (Zápis priamo pod hlavné definície na riadok 5)
-          find . -name "exynos-ucc.h" -exec sed -i '5i #include <linux/plist.h>' {} + || true
-          find . -name "exynos-ucc.c" -exec sed -i '5i #include <linux/plist.h>' {} + || true
-          find . -name "sec_debug_dtask.c" -exec sed -i '5i #include <linux/sched.h>' {} + || true
+          # NEPRISTRELNÉ VYNÚTENIE HLAVIČIEK CEZ MAKEFILE: Prinútime zložky, aby na samom úvode kompilácie načítali plist.h a sched.h
+          echo "ccflags-y += -include linux/plist.h" >> drivers/cpuidle/Makefile || true
+          echo "ccflags-y += -include linux/sched.h" >> drivers/samsung/debug/Makefile || true
           
           find . -type f -name "vision-compat-ioctl32*.c" -exec sed -i '1i #define compat_caddr_t unsigned int\n#define compat_ptr(x) ((void*)(unsigned long)(x))' {} + || true
           find . -type f -name "vpu_compat_ioctl32.c" -exec sed -i '1i #define compat_caddr_t unsigned int\n#define compat_ptr(x) ((void*)(unsigned long)(x))' {} + || true
           
-          # Pamäťová záplata pre štruktúru času vo vision-core
           find . -name "vision-compat-ioctl32.c" -exec sed -i 's/struct compat_timeval[[:space:]]*timestamp\[6\];/unsigned long timestamp;/g' {} + || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
