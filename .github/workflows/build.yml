@@ -135,13 +135,13 @@ jobs:
           sed -i '1i #include <linux/plist.h>' drivers/cpuidle/exynos-ucc.c || true
           sed -i '1i #include <linux/sched.h>' drivers/samsung/debug/sec_debug_dtask.c || true
           
-          # BEZPEČNÁ ÚPRAVA ORIGINÁLNYCH SÚBOROV MAKEFILE: Iba podmienime chybové riadky bez toho, aby sme čokoľvek vymazali
-          sed -i 's/vision-compat-ioctl32.o/obj-$(CONFIG_COMPAT) += vision-compat-ioctl32.o/g' drivers/vision/vision-core/Makefile || true
-          sed -i 's/vision-compat-ioctl32_v1.o/obj-$(CONFIG_COMPAT) += vision-compat-ioctl32_v1.o/g' drivers/vision/vision-core/Makefile || true
-          sed -i 's/obj-y += vpu_compat_ioctl32.o/obj-$(CONFIG_COMPAT) += vpu_compat_ioctl32.o/g' drivers/vision/vpu/Makefile || true
+          # TYPOVÁ ZÁPLATA: Vložíme prázdne definície 32-bitových typov priamo do chybových C súborov (Pôvodný Makefile zostane netknutý)
+          sed -i '1i #define compat_caddr_t void*\nstruct compat_timeval { long tv_sec; long tv_usec; };' drivers/vision/vision-core/vision-compat-ioctl32.c || true
+          sed -i '1i #define compat_caddr_t void*\nstruct compat_timeval { long tv_sec; long tv_usec; };' drivers/vision/vision-core/vision-compat-ioctl32_v1.c || true
+          sed -i '1i #define compat_caddr_t void*' drivers/vision/vpu/vpu_compat_ioctl32.c || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_ioctl"
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_ioctl -Dcompat_ptr(x)=((void*)(unsigned long)(x))"
 
       - name: Package with AnyKernel3
         run: |
