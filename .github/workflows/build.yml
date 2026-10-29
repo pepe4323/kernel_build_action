@@ -18,7 +18,6 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          # Pridaný gcc-arm-linux-gnueabi pre stopercentnú podporu vdso32 vrstvy Samsung procesora
           sudo apt-get install -y bc bison build-essential ccache flex git gnupg gperf libncurses5-dev libssl-dev libxml2-dev libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 libssl-dev curl wget llvm clang lld gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu gcc-arm-linux-gnueabi lz4 unzip
 
       - name: Checkout Kernel Source
@@ -84,12 +83,20 @@ jobs:
           sed -i '/source "drivers\/kernelsu\/Kconfig"/d' drivers/Kconfig
           sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
           
+          # Dynamické nájdenie Samsung defconfigu
           CONFIG_PATH=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" -o -name "beyond0q*" -o -name "*9820*" | head -n 1)
           if [ -z "$CONFIG_PATH" ]; then
             CONFIG_PATH=$(find arch/arm64/configs/ -name "*defconfig" | head -n 1)
           fi
           echo "Konfigurujem defconfig na ceste: $CONFIG_PATH"
           
+          # NATVRDO VYPNEME 32-BITOVÚ KOMPATIBILITU A PROBLEMOVÉ VDSO32
+          sed -i '/CONFIG_COMPAT/d' "$CONFIG_PATH"
+          sed -i '/CONFIG_VDSO32/d' "$CONFIG_PATH"
+          echo "CONFIG_COMPAT=n" >> "$CONFIG_PATH"
+          echo "CONFIG_VDSO32=n" >> "$CONFIG_PATH"
+          
+          # Vynútenie flagov pre KernelSU-Next
           sed -i '/CONFIG_KSU/d' "$CONFIG_PATH"
           sed -i '/CONFIG_MODULE_SIG/d' "$CONFIG_PATH"
           echo "CONFIG_KSU=y" >> "$CONFIG_PATH"
@@ -101,7 +108,6 @@ jobs:
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
-          # Zadefinovaná 32-bitová premenná prostredia pre kompiláciu vdso32
           export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
           
           CONFIG_NAME=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" -o -name "beyond0q*" -o -name "*9820*" | sed 's|arch/arm64/configs/||' | head -n 1)
@@ -111,11 +117,8 @@ jobs:
           echo "Spúšťam konfiguráciu pre: $CONFIG_NAME"
           
           sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso/Makefile || true
-          sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso32/Makefile || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
-          
-          # Pridaný parameter CROSS_COMPILE_ARM32 do príkazu make pre bezchybné zloženie 32-bitovej vrstvy
           make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi-
 
       - name: Package with AnyKernel3
