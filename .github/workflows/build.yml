@@ -145,11 +145,17 @@ jobs:
           
           sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso/Makefile || true
           
-          sed -i 's|#include <linux/plist.h>||g' include/linux/ems_service.h || true
           sed -i '1i #include <linux/plist.h>' include/linux/ems_service.h || true
+          sed -i '1i #include <linux/plist.h>' include/linux/exynos-ucc.h || true
+          sed -i '1i #include <linux/plist.h>' drivers/cpuidle/exynos-ucc.c || true
+          sed -i '1i #include <linux/sched.h>' drivers/samsung/debug/sec_debug_dtask.c || true
           sed -i '2i #ifndef F2FS_SUPER_MAGIC\n#define F2FS_SUPER_MAGIC 0xF2F52010\n#endif' fs/super.c || true
           
-          sed -i '1i #ifndef compat_alloc_user_space\n#define compat_alloc_user_space(x) NULL\n#endif\n#ifndef compat_ptr\n#define compat_ptr(x) ((void*)(unsigned long)(x))\n#endif\n#ifndef compat_caddr_t\n#define compat_caddr_t unsigned int\n#endif\nstruct compat_timeval { long tv_sec; long tv_usec; };' include/linux/compat.h || true
+          # VYČISTENÝ ZÁPIS HLAVIČIEK: Bez nebezpečnej duplicity štruktúry compat_timeval
+          sed -i '1i #ifndef compat_alloc_user_space\n#define compat_alloc_user_space(x) NULL\n#endif\n#ifndef compat_ptr\n#define compat_ptr(x) ((void*)(unsigned long)(x))\n#endif\n#ifndef compat_caddr_t\n#define compat_caddr_t unsigned int\n#endif' include/linux/compat.h || true
+          
+          find . -type f -name "vision-compat-ioctl32*.c" -exec sed -i '1i #define compat_caddr_t unsigned int\n#define compat_ptr(x) ((void*)(unsigned long)(x))' {} + || true
+          find . -type f -name "vpu_compat_ioctl32.c" -exec sed -i '1i #define compat_caddr_t unsigned int\n#define compat_ptr(x) ((void*)(unsigned long)(x))' {} + || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
           make O=out ARCH=arm64 CC=clang prepare
