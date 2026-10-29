@@ -125,7 +125,9 @@ jobs:
           echo "Spúšťam konfiguráciu pre: $CONFIG_NAME"
           
           sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso/Makefile || true
-          sed -i 's/1i #include <linux\/plist.h>/d' include/linux/ems_service.h || true
+          
+          # Vyčistené a stopercentne uzavreté riadky sed bez chýb syntaxe
+          sed -i 's|#include <linux/plist.h>||g' include/linux/ems_service.h || true
           sed -i '1i #include <linux/plist.h>' include/linux/ems_service.h || true
           sed -i '2i #ifndef F2FS_SUPER_MAGIC\n#define F2FS_SUPER_MAGIC 0xF2F52010\n#endif' fs/super.c || true
           
@@ -134,13 +136,13 @@ jobs:
           make O=out ARCH=arm64 "$CONFIG_NAME"
           make O=out ARCH=arm64 CC=clang prepare
           
-          # FINÁLNY MASTER LINK PARMETRE: Pridané explicitné flagovacie filtre pre ld.lld linker na prekonanie tichého pádu spájania
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -ffixed-x18 -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010" LDFLAGS="-maarch64elf -Xlinker --no-rosegment -Xlinker --no-check-sections"
+          # ČISTÉ BEZPEČNÉ VOLANIE: Odstránené problematické LDFLAGS a zátvorky v parametroch, ktoré miatli podsystém VDSO
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD="ld.lld --no-rosegment --no-check-sections" OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -ffixed-x18 -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dabox_rdma_fio_compat_ioctl=abox_rdma_fio_ioctl -Dabox_wdma_fio_compat_ioctl=abox_wdma_fio_ioctl -Dabox_g_rdma_fio_compat_ioctl=abox_g_rdma_fio_ioctl -Dabox_g_wdma_fio_compat_ioctl=abox_g_wdma_fio_ioctl"
 
       - name: Package with AnyKernel3
         run: |
           git clone --depth=1 https://github.com AnyKernel3_priečinok
-          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3_priečinok/ || cp out/arch/arm64/boot/Image AnyKernel3_priečinok/ || cp out/Image AnyKernel3_priečinok/
+          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3_priečinok/ || cp out/arch/arm64/boot/Image AnyKernel3_priečinok/
           cd AnyKernel3_priečinok
           zip -r9 ../CreckerKernel-KSU-Next.zip *
 
