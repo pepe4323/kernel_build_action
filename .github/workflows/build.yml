@@ -80,7 +80,8 @@ jobs:
           sed -i '/obj-y += kernelsu\//d' drivers/Makefile
           echo "obj-y += kernelsu/" >> drivers/Makefile
           
-          sed -i '/source "drivers\/kernelsu\/Kconfig"/d' drivers/Kconfig
+          sed -i '/source "disabled" "drivers\/kernelsu\/Kconfig"/d' drivers/Kconfig || true
+          sed -i '/source "drivers\/kernelsu\/Kconfig"/d' drivers/Kconfig || true
           sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
           
           CONFIG_PATH=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" -o -name "beyond0q*" -o -name "*9820*" | head -n 1)
@@ -99,6 +100,10 @@ jobs:
           echo "CONFIG_LTO=n" >> "$CONFIG_PATH"
           echo "CONFIG_LTO_CLANG=n" >> "$CONFIG_PATH"
           
+          # DEAKTIVÁCIA STACK PROTECTORA, ABY COMPILER PREŠIEL KONTROLOU
+          sed -i '/CONFIG_CC_STACKPROTECTOR_STRONG/d' "$CONFIG_PATH"
+          echo "CONFIG_CC_STACKPROTECTOR_STRONG=n" >> "$CONFIG_PATH"
+          
           sed -i '/CONFIG_KSU/d' "$CONFIG_PATH"
           sed -i '/CONFIG_MODULE_SIG/d' "$CONFIG_PATH"
           echo "CONFIG_KSU=y" >> "$CONFIG_PATH"
@@ -115,7 +120,7 @@ jobs:
           CONFIG_NAME=$(find arch/arm64/configs/ -name "beyond0qlte_eur_open_defconfig" -o -name "beyond0q*" -o -name "*9820*" | sed 's|arch/arm64/configs/||' | head -n 1)
           if [ -z "$CONFIG_NAME" ]; then
             CONFIG_NAME=$(find arch/arm64/configs/ -name "*defconfig" | sed 's|arch/arm64/configs/||' | head -n 1)
-          fi
+          </div>
           echo "Spúšťam konfiguráciu pre: $CONFIG_NAME"
           
           sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso/Makefile || true
@@ -123,21 +128,13 @@ jobs:
           sed -i '1i #include <linux/plist.h>' include/linux/ems_service.h || true
           
           sed -i '2i #ifndef F2FS_SUPER_MAGIC\n#define F2FS_SUPER_MAGIC 0xF2F52010\n#endif' fs/super.c || true
-          
           sed -i 's/abox_rdma_fio_compat_ioctl/abox_rdma_fio_ioctl/g' sound/soc/samsung/abox/abox_rdma.c || true
           sed -i 's/abox_wdma_fio_compat_ioctl/abox_wdma_fio_ioctl/g' sound/soc/samsung/abox/abox_wdma.c || true
-          sed -i 's/abox_g_rdma_fio_compat_ioctl/abox_g_rdma_fio_ioctl/g' sound/soc/samsung/abox/abox_g_rdma.c || true
-          sed -i 's/abox_g_wdma_fio_compat_ioctl/abox_g_wdma_fio_ioctl/g' sound/soc/samsung/abox/abox_g_wdma.c || true
-          sed -i 's/\.ioctl_compat.*/.ioctl_compat = abox_pcm_ioctl,/g' sound/soc/samsung/abox/abox_pcm.c || true
-          
-          sed -i 's/\.compat_ioctl.*/#ifdef CONFIG_COMPAT\n\t.compat_ioctl = gsc_v4l2_compat_ioctl,\n#endif/g' drivers/media/platform/exynos/gsc/gsc-core.c || true
-          sed -i 's/vpu_compat_ioctl/#ifdef CONFIG_COMPAT\n\tvpu_compat_ioctl\n#else\n\tNULL\n#endif/g' drivers/vision/vpu/vpu_ioctl.c || true
-          sed -i 's/\.compat_ioctl.*/#ifdef CONFIG_COMPAT\n\t.compat_ioctl = kbase_api_compat_ioctl,\n#endif/g' drivers/gpu/arm/midgard/mali_kbase_core_linux.c || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
           
-          # VYČISTENÝ PRÍKAZ: Pridaná globálna definícia pre chýbajúcu zram funkciu (-Dcompat_alloc_user_space(x)=NULL)
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dcompat_alloc_user_space(x)=NULL"
+          # BEZPEČNE MASKKOVANÉ ZÁTVORKY (\\( a \\)) V PREMENNEJ KCFLAGS PRE ZRAM OŠETRENIE
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010 -Dcompat_alloc_user_space\\(x\\)=NULL"
 
       - name: Package with AnyKernel3
         run: |
