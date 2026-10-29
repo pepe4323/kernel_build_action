@@ -163,7 +163,9 @@ jobs:
 
       - name: Package with AnyKernel3
         run: |
-          git clone --depth=1 https://github.com AnyKernel3_priečinok
+          sudo apt-get update && sudo apt-get install -y zip
+          # TVOJA NAVRHOVANÁ ČISTÁ WEB ADRESA BEZ PRÍPONY .GIT NASADENÁ SEM:
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3 AnyKernel3_priečinok
           cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3_priečinok/ || cp out/arch/arm64/boot/Image AnyKernel3_priečinok/
           cd AnyKernel3_priečinok
           zip -r9 ../CreckerKernel-KSU-Next.zip *
