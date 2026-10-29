@@ -164,18 +164,10 @@ jobs:
       - name: Package with AnyKernel3
         run: |
           sudo apt-get update && sudo apt-get install -y zip
-          
-          # 1. Stiahne váš AnyKernel3
           git clone --depth=1 https://github.com anykernel
-          
-          # 2. Skopíruje skompilovaný kernel do priečinka
           cp out/arch/arm64/boot/Image.gz-dtb anykernel/ || cp out/arch/arm64/boot/Image.gz anykernel/ || cp out/arch/arm64/boot/Image anykernel/
-          
-          # 3. POISTKA: Ak by náhodou nasledujúci krok hľadal anykernel.sh o priečinok vedľa
           mkdir -p anykernel/anykernel
           cp anykernel/anykernel.sh anykernel/anykernel/anykernel.sh || true
-          
-          # 4. Vojde do priečinka a zabalí to do finálneho .zip
           cd anykernel
           zip -r9 ../CreckerKernel-KSU-Next.zip * 
 
