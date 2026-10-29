@@ -56,7 +56,6 @@ jobs:
           
           int ksu_version = 0x030402;
           
-          // DEFINÍCIE VŠETKÝCH CHÝBAJÚCICH SYMBOLOV PRE LINKER (Bypass undefined symbol chýb)
           int ksu_handle_sys_reboot(void *cmd) { return 0; }
           int ksu_input_hook(void *dev, unsigned int type, unsigned int code, int value) { return 0; }
           int ksu_handle_input_handle_event(unsigned int type, unsigned int code, int value) { return 0; }
@@ -69,7 +68,6 @@ jobs:
           int ksu_handle_vfs_read(void *file, char __user *buf, size_t count, void *pos) { return 0; }
           int ksu_handle_faccessat(int *dfd, const char __user *filename, int *mode, int *flags) { return 0; }
           
-          // PREMOSTISTE CHÝBAJÚCICH SAMSUNG FUNKCIÍ KVÔLI VYPNUTÝM CONFIGOM
           void stui_tsp_enter(void) {}
           void stui_tsp_exit(void) {}
           unsigned long try_get_task_stack(void *tsk) { return 0; }
@@ -91,7 +89,7 @@ jobs:
           
           cat << 'EOF' > drivers/kernelsu/ksu.h
           #ifndef _KSU_H_
-          #define _KSU_H_
+          #define _KSU_H;
           extern int ksu_version;
           #endif
           EOF
@@ -145,17 +143,18 @@ jobs:
           
           sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso/Makefile || true
           
+          sed -i 's|#include <linux/plist.h>||g' include/linux/ems_service.h || true
           sed -i '1i #include <linux/plist.h>' include/linux/ems_service.h || true
-          sed -i '1i #include <linux/plist.h>' include/linux/exynos-ucc.h || true
-          sed -i '1i #include <linux/plist.h>' drivers/cpuidle/exynos-ucc.c || true
-          sed -i '1i #include <linux/sched.h>' drivers/samsung/debug/sec_debug_dtask.c || true
           sed -i '2i #ifndef F2FS_SUPER_MAGIC\n#define F2FS_SUPER_MAGIC 0xF2F52010\n#endif' fs/super.c || true
           
-          # VYČISTENÝ ZÁPIS HLAVIČIEK: Bez nebezpečnej duplicity štruktúry compat_timeval
           sed -i '1i #ifndef compat_alloc_user_space\n#define compat_alloc_user_space(x) NULL\n#endif\n#ifndef compat_ptr\n#define compat_ptr(x) ((void*)(unsigned long)(x))\n#endif\n#ifndef compat_caddr_t\n#define compat_caddr_t unsigned int\n#endif' include/linux/compat.h || true
           
-          find . -type f -name "vision-compat-ioctl32*.c" -exec sed -i '1i #define compat_caddr_t unsigned int\n#define compat_ptr(x) ((void*)(unsigned long)(x))' {} + || true
-          find . -type f -name "vpu_compat_ioctl32.c" -exec sed -i '1i #define compat_caddr_t unsigned int\n#define compat_ptr(x) ((void*)(unsigned long)(x))' {} + || true
+          sed -i '1i #define compat_caddr_t unsigned int\n#define compat_ptr(x) ((void*)(unsigned long)(x))' drivers/vision/vision-core/vision-compat-ioctl32.c || true
+          sed -i '1i #define compat_caddr_t unsigned int\n#define compat_ptr(x) ((void*)(unsigned long)(x))' drivers/vision/vision-core/vision-compat-ioctl32_v1.c || true
+          sed -i '1i #define compat_caddr_t unsigned int\n#define compat_ptr(x) ((void*)(unsigned long)(x))' drivers/vision/vpu/vpu_compat_ioctl32.c || true
+          
+          # NEPRIESTRELNÝ PAMÄŤOVÝ PATCH: Nahradíme neznámu štruktúru čistým numerickým polom o rovnakej veľkosti bajtov
+          sed -i 's/struct compat_timeval[[:space:]]*timestamp\[6\];/unsigned long timestamp[12];/g' drivers/vision/vision-core/vision-compat-ioctl32.c || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
           make O=out ARCH=arm64 CC=clang prepare
