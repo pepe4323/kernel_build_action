@@ -122,15 +122,10 @@ jobs:
           sed -i 's/1i #include <linux\/plist.h>/d' include/linux/ems_service.h || true
           sed -i '1i #include <linux/plist.h>' include/linux/ems_service.h || true
           
-          sed -i '2i #ifndef F2FS_SUPER_MAGIC\n#define F2FS_SUPER_MAGIC 0xF2F52010\n#endif' fs/super.c || true
-          
-          # HROMADNÁ PROAKTÍVNA ZÁPLATA PRE CELÚ ŠIFROVACIU ZLOŽKU SAMSUNG SDP
-          sed -i '2i #ifndef EXT4_SUPER_MAGIC\n#define EXT4_SUPER_MAGIC 0xEF53\n#endif' fs/crypto/sdp/sdp_dek.c || true
-          sed -i '2i #ifndef EXT4_SUPER_MAGIC\n#define EXT4_SUPER_MAGIC 0xEF53\n#endif' fs/crypto/sdp/sdp_crypto.c || true
-          sed -i '2i #ifndef EXT4_SUPER_MAGIC\n#define EXT4_SUPER_MAGIC 0xEF53\n#endif' fs/crypto/sdp/sdp_vault.c || true
-          
           make O=out ARCH=arm64 "$CONFIG_NAME"
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error"
+          
+          # GLOBÁLNA DEFINÍCIA IDENTIFIKÁTOROV cez prepínače -D v parametre KCFLAGS
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error -DEXT4_SUPER_MAGIC=0xEF53 -DF2FS_SUPER_MAGIC=0xF2F52010"
 
       - name: Package with AnyKernel3
         run: |
