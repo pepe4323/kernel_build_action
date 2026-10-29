@@ -164,10 +164,15 @@ jobs:
       - name: Package with AnyKernel3
         run: |
           sudo apt-get update && sudo apt-get install -y zip
-          # TVOJA NAVRHOVANÁ ČISTÁ WEB ADRESA BEZ PRÍPONY .GIT NASADENÁ SEM:
-          git clone --depth=1 https://github.com/osm0sis/AnyKernel3 AnyKernel3_priečinok
-          cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3_priečinok/ || cp out/arch/arm64/boot/Image AnyKernel3_priečinok/
-          cd AnyKernel3_priečinok
+          
+          # 1. Stiahne VÁŠ VLASTNÝ fork AnyKernelu (premenovaný na malý priečinok 'anykernel')
+          git clone --depth=1 https://github.com anykernel
+          
+          # 2. Skopíruje váš skompilovaný kernel do tohto priečinka
+          cp out/arch/arm64/boot/Image.gz-dtb anykernel/ || cp out/arch/arm64/boot/Image.gz anykernel/ || cp out/arch/arm64/boot/Image anykernel/
+          
+          # 3. Vojde do priečinka a zabalí to do finálneho .zip
+          cd anykernel
           zip -r9 ../CreckerKernel-KSU-Next.zip *
 
       - name: Upload Finished Kernel Artifact
