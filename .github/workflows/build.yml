@@ -164,6 +164,7 @@ jobs:
       - name: Package with AnyKernel3
         run: |
           sudo apt-get update && sudo apt-get install -y zip
+          sed -i 's/device.name1=/device.name1=beyond0/g' anykernel/anykernel.sh
           # TVOJA NAVRHOVANÁ ČISTÁ WEB ADRESA BEZ PRÍPONY .GIT NASADENÁ SEM:
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3 AnyKernel3_priečinok
           cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3_priečinok/ || cp out/arch/arm64/boot/Image AnyKernel3_priečinok/
