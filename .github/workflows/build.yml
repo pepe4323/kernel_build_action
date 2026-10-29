@@ -119,12 +119,13 @@ jobs:
           echo "Spúšťam konfiguráciu pre: $CONFIG_NAME"
           
           sed -i 's/ld.gold/ld/g' arch/arm64/kernel/vdso/Makefile || true
-          
-          # ZMENA: Vkladáme hlavičku priamo na 1. riadok súboru, čím zaručíme jej načítanie ako prvej veci
+          sed -i 's/1i #include <linux\/plist.h>/d' include/linux/ems_service.h || true
           sed -i '1i #include <linux/plist.h>' include/linux/ems_service.h || true
           
           make O=out ARCH=arm64 "$CONFIG_NAME"
-          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+          
+          # PRIDANÝ PARAMETER KCFLAGS="-Wno-error" na prekonanie tichých pádov pri žltých varovaniach
+          make -j$(nproc --all) O=out ARCH=arm64 CC=clang LD=ld.lld OBJCOPY=llvm-objcopy STRIP=llvm-strip CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- KCFLAGS="-Wno-error"
 
       - name: Package with AnyKernel3
         run: |
